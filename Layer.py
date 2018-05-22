@@ -1,5 +1,5 @@
 import numpy as np
-from Activation import Activtion
+from Activation import ActivationFunction
 
 
 class Layer:
@@ -19,18 +19,18 @@ class Layer:
 
 
         if Activation is None:
-            self.Activation = lambda x:x;
-        else:
-            self.Activation = Activation;
+            Activation = (lambda x:x,lambda x:1)
+
+        self.Activation = Activation[0];
+        self.dActivation = Activation[1];
 
     def forwardprop(self,prev):
-
         if prev.shape[1] != self.Input_shape:
             raise Exception('dimension Exception')
 
-        self.bout = prev.dot(self.W) + self.bias
+        self.prev = prev
+        self.bout = self.prev.dot(self.W) + self.bias
         self.aout = self.Activation(self.bout)
-
         self.aout  = self.aout * np.random.choice(2,self.n_mem,p=[self.Dropout,1-self.Dropout])
 
 
@@ -47,7 +47,7 @@ class Layer:
 if __name__ == '__main__':
 
     I1 = np.random.randn(10).reshape(-1,10)
-    L1 = Layer(Input_shape=I1.shape[1],number_members= 3,Activation=Activtion.Relu)
+    L1 = Layer(Input_shape=I1.shape[1],number_members= 3,Activation=ActivationFunction.Relu)
 
     print(I1)
     print(L1.forwardprop(I1))

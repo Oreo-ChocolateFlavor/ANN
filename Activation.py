@@ -1,7 +1,6 @@
 import numpy as np
 
-class Activtion:
-
+class ActivationFunction:
     @staticmethod
     def Relu(x):
         return  x*(x>0)
@@ -26,6 +25,29 @@ class Activtion:
 
         return ret_x
 
+class Derivative_ActivationFunction:
+    @staticmethod
+    def d_sigmoid(x):
+        return ActivationFunction.sigmoid(x)*(1-ActivationFunction.sigmoid(x))
+
+    @staticmethod
+    def d_Relu(x):
+        pass
+    @staticmethod
+    def d_tanh(x):
+        return 1-np.power(ActivationFunction.tanh(x),2)
+
+    @staticmethod
+    def d_softmax(x):
+        pass
+
+    @staticmethod
+    def step(x):
+        pass
+
+Relu = (ActivationFunction.Relu,Derivative_ActivationFunction.d_Relu)
+sigmoid = (ActivationFunction.sigmoid,Derivative_ActivationFunction.d_sigmoid)
+
 if __name__ == '__main__':
 
-    print(np.sum(Activtion.softmax(np.array([-1,-2,3,4,5]).reshape(1,-1))))
+    print(np.sum(ActivationFunction.softmax(np.array([-1,-2,3,4,5]).reshape(1,-1))))
