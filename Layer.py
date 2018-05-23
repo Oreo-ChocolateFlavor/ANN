@@ -7,7 +7,7 @@ class Layer:
         self.Input_shape = Input_shape
         self.n_mem = number_members
         self.delayed = False
-        self.bias = np.random.randn(self.n_mem).reshape(1,-1);
+        self.bias = 0 #np.random.randn(self.n_mem).reshape(1,-1);
 
         if(Dropout > 1): raise Exception('Probability exceed 1')
         self.Dropout = Dropout

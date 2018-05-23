@@ -3,11 +3,11 @@ import numpy as np
 class ActivationFunction:
     @staticmethod
     def Relu(x):
-        return  x*(x>0)
-
+        return x*(x>0)
     @staticmethod
     def sigmoid(x):
-        return 1/(1+np.exp(-x))
+        converted = np.clip(x,-500,500)
+        return 1/(1+np.exp(-converted))
 
     @staticmethod
     def tanh(x):

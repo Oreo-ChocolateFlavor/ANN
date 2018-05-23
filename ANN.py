@@ -3,9 +3,9 @@ import numpy as np
 import Activation
 import Loss
 from keras.datasets import boston_housing
-
 from keras.models import Sequential
 from keras.layers import Dense
+
 
 class ANN:
     def __init__(self):
@@ -31,8 +31,8 @@ class ANN:
 
     def compile(self,Loss_function,optimizer,learning_rate = 0.01): #
         self.lr = learning_rate
-        self.Loss_function = Loss_function[0];
-        self.dLoss_function = Loss_function[1];
+        self.Loss_function = Loss_function[0]
+        self.dLoss_function = Loss_function[1]
         self.optimizer = optimizer
 
     def predict(self,input_data):
@@ -52,9 +52,9 @@ class ANN:
             batch_size = train_X.shape[0]
 
         for iter_num in range(epochs):
-
-            print('epochs' + str(iter_num))
-            print('*'*50)
+            if(verbose):
+                print('epochs' + str(iter_num))
+                print('*'*50)
 
             start_ind = 0
             while(start_ind < train_X.shape[0]):
@@ -82,40 +82,50 @@ class ANN:
                 doutb_dwij = np.full(cur_layer.W.shape,1) * cur_layer.prev[d_out_num:d_out_num+1].T
                 douta_doutb = cur_layer.dActivation(cur_layer.bout[d_out_num:d_out_num+1])
 
-                dlayer = cur_d_out * douta_doutb* doutb_dwij
+                temp_result = cur_d_out * douta_doutb
 
-                cur_d_out = dlayer.sum(axis=1).T
+                dlayer =  temp_result * doutb_dwij
+                cur_d_out = temp_result * cur_layer.W
 
+                cur_d_out = cur_d_out.sum(axis=1)
+                dlayer = dlayer / minibatch_dout.shape[0]
                 if d_out_num==0:
                     dLayers.append(dlayer)
                 else:
                     dLayers[layer_num] += dlayer
 
-        for dlayer in dLayers:
-            dlayer = dlayer / minibatch_dout.shape[0]
-
         for dlayer,cur_layer in zip(dLayers,reversed(self.Layers)):
-            cur_layer.W = cur_layer.W - self.lr * dlayer
+            cur_layer.W = cur_layer.W - (self.lr * dlayer)
 
 
 if __name__ == '__main__':
     (x_train, y_train), (x_test, y_test) = boston_housing.load_data()
-    model = Sequential()
-    model.add(Dense(13, input_dim=13, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(1, kernel_initializer='normal'))
+    #model = Sequential()
+    #model.add(Dense(13, input_dim=13, kernel_initializer='normal', activation='relu'))
+    #model.add(Dense(1, kernel_initializer='normal'))
     #Compile model
-    model.compile(loss='mean_squared_error', optimizer='adam')
-
-    history = model.fit(x_train[:1],y_train[:1],epochs=1,batch_size=1,verbose=1)
-
-    print(model.predict(x_train[1:2]),y_train[1:2])
+    #model.compile(loss='mean_squared_error', optimizer='adam')
+    #history = model.fit(x_train[:1],y_train[:1],epochs=1,batch_size=1,verbose=1)
+    #print(model.predict(x_train[1:2]),y_train[1:2])
 
     y_train = y_train.reshape(-1,1)
 
+    #x = np.array([0.05,0.1]).reshape(-1,2)
+    #y = np.array([0.01,0.99]).reshape(-1,2)
+
     model = ANN()
-    model.add(Layer(1,Input_shape=13))
-    model.compile(Loss_function=Loss.MSE,optimizer=None,learning_rate=0.0000001)
-    model.train(x_train[:1],y_train[:1],epochs=1,verbose=True,batch_size=1)
-    print(model.predict(x_train[1:2]))
+    model.add(Layer(4,Input_shape=13,Activation=Activation.sigmoid))
+    model.add(Layer(4, Activation=Activation.sigmoid))
+    model.add(Layer(1))
+
+    model.compile(Loss_function=Loss.MSE,optimizer=None,learning_rate=0.000001)
+    ##model.Layers[0].W = np.array([[0.15,0.25],[0.20,0.30]]);
+    #model.Layers[0].bias = np.array([0.35,0.35])
+    #model.Layers[1].W = np.array([[0.40, .50], [0.45, 0.55]]);
+    #model.Layers[1].bias = np.array([0.6, 0.6])
+    model.train(x_train,y_train,epochs=1,verbose=True,batch_size=1)
+
+    print(model.predict(x_test))
+    print(y_test)
 
 
