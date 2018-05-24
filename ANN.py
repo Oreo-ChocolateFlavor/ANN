@@ -5,6 +5,7 @@ import Loss
 from keras.datasets import boston_housing
 from keras.models import Sequential
 from keras.layers import Dense
+from keras.optimizers import SGD
 
 
 class ANN:
@@ -52,6 +53,8 @@ class ANN:
             batch_size = train_X.shape[0]
 
         for iter_num in range(epochs):
+            if iter_num%100 == 0:
+                print('iter:',iter_num)
             if(verbose):
                 print('epochs' + str(iter_num))
                 print('*'*50)
@@ -65,9 +68,16 @@ class ANN:
 
                 predicted_y = self.predict(mini_batchX) # 예측해서
                 Loss = self.Loss_function(mini_batchy,predicted_y) #Loss 계산하고
+
+                if verbose:
+                    print('before Loss:',Loss,'before predicted',predicted_y,'real_output',mini_batchy)
+
                 self.backprop(mini_batchy,predicted_y) # backpropagation 돌린다.
                 start_ind += batch_size
                 if verbose:
+                    predicted_y = self.predict(mini_batchX)  # 예측해서
+                    Loss = self.Loss_function(mini_batchy, predicted_y)  # Loss 계산하고
+                    print('after Loss:',Loss,'after predicted',predicted_y,'real_output',mini_batchy)
                     print('Loss:',Loss)
                     print('-'*50)
 
@@ -100,32 +110,41 @@ class ANN:
 
 if __name__ == '__main__':
     (x_train, y_train), (x_test, y_test) = boston_housing.load_data()
-    #model = Sequential()
-    #model.add(Dense(13, input_dim=13, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(1, kernel_initializer='normal'))
+    model = Sequential()
+    model.add(Dense(1, input_dim=13, kernel_initializer='normal', activation='relu'))
+    #model.add(Dense(30, kernel_initializer='normal', activation='relu'))
+    #model.add(Dense(1,kernel_initializer='normal', activation='relu'))
+
     #Compile model
-    #model.compile(loss='mean_squared_error', optimizer='adam')
-    #history = model.fit(x_train[:1],y_train[:1],epochs=1,batch_size=1,verbose=1)
-    #print(model.predict(x_train[1:2]),y_train[1:2])
+    model.compile(loss='mean_squared_error', optimizer=SGD(lr=0.0000001))
 
-    y_train = y_train.reshape(-1,1)
+    #x_train = np.array([[1, 1], [0, 1], [1, 1], [0, 1], [-1, 1], [0, 1], [-2, 1]])
+    #y_train = np.array([3, 1, 2, 1, -1, 1, -3]).reshape(-1, 1)
 
+    history = model.fit(x_train,y_train,epochs=10,batch_size=1,verbose=1)
+    #print(model.predict(np.array([[1,1]])))
     #x = np.array([0.05,0.1]).reshape(-1,2)
     #y = np.array([0.01,0.99]).reshape(-1,2)
 
-    model = ANN()
-    model.add(Layer(4,Input_shape=13,Activation=Activation.sigmoid))
-    model.add(Layer(4, Activation=Activation.sigmoid))
-    model.add(Layer(1))
 
-    model.compile(Loss_function=Loss.MSE,optimizer=None,learning_rate=0.000001)
+
+
+    #y_train = y_train.reshape(-1,1)
+    #model = ANN()
+    #model.add(Layer(1,Input_shape=13,Activation=Activation.Relu))
+    #model.add(Layer(1,Activation=Activation.Relu))
+    #model.add(Layer(6,Activation=Activation.sigmoid))
+    #model.add(Layer(1))
+
+    #model.compile(Loss_function=Loss.MSE,optimizer=None,learning_rate=0.0000001)
     ##model.Layers[0].W = np.array([[0.15,0.25],[0.20,0.30]]);
     #model.Layers[0].bias = np.array([0.35,0.35])
     #model.Layers[1].W = np.array([[0.40, .50], [0.45, 0.55]]);
     #model.Layers[1].bias = np.array([0.6, 0.6])
-    model.train(x_train,y_train,epochs=1,verbose=True,batch_size=1)
+    #model.train(x_train,y_train,epochs=1000,verbose=False,batch_size=1)
 
-    print(model.predict(x_test))
-    print(y_test)
+
+
+    print(y_test - model.predict(x_test).reshape(-1))
 
 

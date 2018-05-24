@@ -32,6 +32,13 @@ class Derivative_ActivationFunction:
 
     @staticmethod
     def d_Relu(x):
+
+        return x >0
+        #if x>0:
+        #    return 1
+        #else:
+        #    return 0
+
         pass
     @staticmethod
     def d_tanh(x):
