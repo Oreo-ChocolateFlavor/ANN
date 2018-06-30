@@ -2,17 +2,15 @@ from Layer import Layer
 import numpy as np
 import Activation
 import Loss
-from keras.datasets import boston_housing
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.optimizers import SGD
-
+from keras.datasets import mnist
+from Utils import Utils
+from keras.utils import to_categorical
+from sklearn.metrics import *
 
 class ANN:
     def __init__(self):
         self.Layers = list()
     def add(self,L:Layer):
-
         if not isinstance(L,Layer):
             raise TypeError
 
@@ -70,31 +68,38 @@ class ANN:
                 Loss = self.Loss_function(mini_batchy,predicted_y) #Loss 계산하고
 
                 if verbose:
-                    print('before Loss:',Loss,'before predicted',predicted_y,'real_output',mini_batchy)
+                    Utils.progress_bar(start_ind+batch_size,train_X.shape[0],Loss)
 
                 self.backprop(mini_batchy,predicted_y) # backpropagation 돌린다.
                 start_ind += batch_size
-                if verbose:
-                    predicted_y = self.predict(mini_batchX)  # 예측해서
-                    Loss = self.Loss_function(mini_batchy, predicted_y)  # Loss 계산하고
-                    print('after Loss:',Loss,'after predicted',predicted_y,'real_output',mini_batchy)
-                    print('Loss:',Loss)
-                    print('-'*50)
 
 
 
     def backprop(self,train_y,predicted_y):
-        minibatch_dout = self.dLoss_function(train_y,predicted_y)
+        minibatch_dout = self.dLoss_function(train_y,predicted_y)  #최초 dL/yi
         dLayers = list()
 
         for d_out_num,cur_d_out in enumerate(minibatch_dout):
             for layer_num,cur_layer in enumerate(reversed(self.Layers)):
-                doutb_dwij = np.full(cur_layer.W.shape,1) * cur_layer.prev[d_out_num:d_out_num+1].T
-                douta_doutb = cur_layer.dActivation(cur_layer.bout[d_out_num:d_out_num+1])
+                doutb_dwij = np.full(cur_layer.W.shape,1) * cur_layer.prev[d_out_num:d_out_num+1].T # outb/wij 를 구함
 
-                temp_result = cur_d_out * douta_doutb
+                softmax_d_S = None
+                temp_result = None
 
-                dlayer =  temp_result * doutb_dwij
+                if(cur_layer.dActivation != Activation.softmax[1]):
+                    douta_doutb = cur_layer.dActivation(x=cur_layer.bout[d_out_num:d_out_num+1]) # outa/outb를 구함
+                else:
+                    if Activation.using_final_result and d_out_num == 0 and self.dLoss_function == Loss.categorical_cross_entropy[1]:
+                        temp_result=  predicted_y[d_out_num:d_out_num+1] - train_y[d_out_num:d_out_num+1] # softmax 하고 categorical 이 같이 있으면 최종 미분결과는 이것
+                    else:
+                        douta_doutb, softmax_d_S = cur_layer.dActivation(x=cur_layer.bout[d_out_num:d_out_num + 1],
+                                                                         prev_out_d=cur_d_out)
+                if temp_result is None:
+                    temp_result = cur_d_out * douta_doutb # dL/dyi_a * dyi_a/dyi_b -> dL/dyi_b
+                    if softmax_d_S is not None:
+                        temp_result = temp_result + softmax_d_S
+
+                dlayer =  temp_result * doutb_dwij # dL/dyi_b * dyi_b/dWij -> dL/dWij
                 cur_d_out = temp_result * cur_layer.W
 
                 cur_d_out = cur_d_out.sum(axis=1)
@@ -109,42 +114,36 @@ class ANN:
 
 
 if __name__ == '__main__':
-    (x_train, y_train), (x_test, y_test) = boston_housing.load_data()
-    model = Sequential()
-    model.add(Dense(1, input_dim=13, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(30, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(1,kernel_initializer='normal', activation='relu'))
+    (x_train, y_train), (x_test, y_test) = mnist.load_data()
+    x_train = x_train.reshape(x_train.shape[0],-1) / 255
+    y_train = to_categorical(y_train)
+    x_test = x_test.reshape(x_test.shape[0],-1) / 255
+    y_test = to_categorical(y_test)
+    print(y_train.shape)
+    print(x_train.shape)
+    #print(x_train[0])
+    #print(y_train[0])
 
-    #Compile model
-    model.compile(loss='mean_squared_error', optimizer=SGD(lr=0.0000001))
+    model = ANN()
+    model.add(Layer(64,Input_shape=28*28,Activation=Activation.tanh))
+    model.add(Layer(64,Activation=Activation.Relu))
+    model.add(Layer(128,Activation=Activation.tanh))
+    model.add(Layer(128,Activation=Activation.Relu))
+    model.add(Layer(10,Activation=Activation.softmax))
+    model.compile(Loss_function=Loss.categorical_cross_entropy,optimizer=None,learning_rate=0.01)
+    model.train(x_train,y_train,epochs=200,batch_size=1000,verbose=True)
+    pred = model.predict(x_test)
 
-    #x_train = np.array([[1, 1], [0, 1], [1, 1], [0, 1], [-1, 1], [0, 1], [-2, 1]])
-    #y_train = np.array([3, 1, 2, 1, -1, 1, -3]).reshape(-1, 1)
+    pred = np.argmax(pred,axis=1)
+    y_test = np.argmax(y_test,axis=1)
 
-    history = model.fit(x_train,y_train,epochs=10,batch_size=1,verbose=1)
-    #print(model.predict(np.array([[1,1]])))
-    #x = np.array([0.05,0.1]).reshape(-1,2)
-    #y = np.array([0.01,0.99]).reshape(-1,2)
+    print(pred)
+    print(y_test)
 
+    precision, recall, fscore, support = precision_recall_fscore_support(y_test.tolist(),pred.tolist())
 
-
-
-    #y_train = y_train.reshape(-1,1)
-    #model = ANN()
-    #model.add(Layer(1,Input_shape=13,Activation=Activation.Relu))
-    #model.add(Layer(1,Activation=Activation.Relu))
-    #model.add(Layer(6,Activation=Activation.sigmoid))
-    #model.add(Layer(1))
-
-    #model.compile(Loss_function=Loss.MSE,optimizer=None,learning_rate=0.0000001)
-    ##model.Layers[0].W = np.array([[0.15,0.25],[0.20,0.30]]);
-    #model.Layers[0].bias = np.array([0.35,0.35])
-    #model.Layers[1].W = np.array([[0.40, .50], [0.45, 0.55]]);
-    #model.Layers[1].bias = np.array([0.6, 0.6])
-    #model.train(x_train,y_train,epochs=1000,verbose=False,batch_size=1)
-
-
-
-    print(y_test - model.predict(x_test).reshape(-1))
-
-
+    print('precision: {}'.format(precision))
+    print('recall: {}'.format(recall))
+    print('fscore: {}'.format(fscore))
+    print('support: {}'.format(support))
+    print('accuracy: {}'.format(accuracy_score(y_test.tolist(),pred.tolist())))
