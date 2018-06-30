@@ -10,10 +10,6 @@ class LossFunction:
         return 1/2*np.power((real_output - predicted_output),2).sum()
 
     @staticmethod
-    def binary_cross_entropy():
-        pass
-
-    @staticmethod
     def categorical_cross_entropy(real_output,predicted_output):
         if(real_output.shape[1] !=  predicted_output.shape[1]):
             raise Exception("real & predicted dimension is not equal. use OHR")
@@ -27,10 +23,6 @@ class Derivative_LossFuntion:
     @staticmethod
     def d_MSE(real_output, predicted_output):
         return (predicted_output - real_output)
-
-    @staticmethod
-    def d_binary_cross_entropy():
-        pass
 
     @staticmethod
     def d_categorical_cross_entropy(real_output, predicted_output):
