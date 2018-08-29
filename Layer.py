@@ -3,17 +3,19 @@ from Activation import ActivationFunction
 
 
 class Layer:
-    def __init__(self,number_members,Input_shape=None,Activation = None,Dropout = 0):
+    def __init__(self,number_members,Input_shape=None,Activation = None,Dropout = 0,Weight_param='Default'):
         self.Input_shape = Input_shape
         self.n_mem = number_members
         self.delayed = False
         self.bias = 0 #np.random.randn(self.n_mem).reshape(1,-1);
 
+        self.Weight_param = Weight_param.lower();
+
         if(Dropout > 1): raise Exception('Probability exceed 1')
         self.Dropout = Dropout
 
         if self.Input_shape is not None and self.n_mem is not None:
-            self.W = np.random.randn(self.Input_shape,self.n_mem)
+            self.init_weight();
         else:
             self.delayed = True
 
@@ -39,10 +41,19 @@ class Layer:
     def backprop(self):
         pass
 
+
+    def init_weight(self):
+        if self.Weight_param == 'xaiver': # recommend for sigmoid & tanh init
+            self.W = np.random.randn(self.Input_shape, self.n_mem) / np.sqrt(self.Input_shape)
+        elif self.Weight_param =='he': # recommend for relu
+            self.bias = 0
+            self.W = np.random.randn(self.Input_shape, self.n_mem) / np.sqrt(self.Input_shape/2)
+        else:
+            self.W = 0.01* np.random.randn(self.Input_shape, self.n_mem)
+
     def fill_delayed_value(self):
         if self.Input_shape is not None:
-            self.W = np.random.randn(self.Input_shape,self.n_mem)
-
+            self.init_weight();
 
 if __name__ == '__main__':
 

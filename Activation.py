@@ -6,8 +6,8 @@ class ActivationFunction:
         return x*(x>0)
     @staticmethod
     def sigmoid(x):
-        converted = np.clip(x,-500,500)
-        return 1/(1+np.exp(-converted))
+        cliped = np.clip(x,-500,500)
+        return 1/(1+np.exp(-cliped))
 
     @staticmethod
     def tanh(x):

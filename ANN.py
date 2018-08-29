@@ -6,9 +6,11 @@ from keras.datasets import mnist
 from Utils import Utils
 from keras.utils import to_categorical
 from sklearn.metrics import *
+import time
 
 class ANN:
     def __init__(self):
+        np.random.seed(int(time.time()))
         self.Layers = list()
     def add(self,L:Layer):
         if not isinstance(L,Layer):
@@ -42,7 +44,19 @@ class ANN:
                 raise Exception("Somevalue doesn't filled")
         return input_data
 
-    def train(self,train_X,train_y,epochs = 200, batch_size=None,verbose = False):
+    def train(self,train_X,train_y,epochs = 200, batch_size=None,verbose = False,validation=0.2):
+        v_size = int(train_y.shape[0] * validation)
+        selected = np.random.choice(np.arange(train_y.shape[0]),v_size)
+        unselected = np.array([True] * train_y.shape[0]);
+        unselected[selected] = False;
+
+
+        validation_X = train_X[selected]
+        train_X = train_X[unselected]
+
+        validation_y = train_y[selected]
+        train_y = train_y[unselected]
+
 
         if train_X.shape[1] != self.Layers[0].Input_shape:
             raise Exception("input_data & input_layer dimension is not equal")
@@ -72,6 +86,14 @@ class ANN:
 
                 self.backprop(mini_batchy,predicted_y) # backpropagation 돌린다.
                 start_ind += batch_size
+
+
+            #validation set 을가지고 검증
+            predicted_y = np.argmax(self.predict(validation_X),axis=1)
+            vali = np.argmax(validation_y,axis=1)
+            acc =  (vali == predicted_y)
+
+            print("validation acc: {}".format(np.sum(acc)/acc.shape[0] *100))
 
 
 
@@ -125,13 +147,13 @@ if __name__ == '__main__':
     #print(y_train[0])
 
     model = ANN()
-    model.add(Layer(64,Input_shape=28*28,Activation=Activation.tanh))
-    model.add(Layer(64,Activation=Activation.Relu))
-    model.add(Layer(128,Activation=Activation.tanh))
-    model.add(Layer(128,Activation=Activation.Relu))
+    model.add(Layer(64,Input_shape=28*28,Activation=Activation.tanh,Weight_param='xavier'))
+    model.add(Layer(64,Activation=Activation.Relu,Weight_param='he'))
+    model.add(Layer(128,Activation=Activation.tanh,Weight_param='xavier'))
+    model.add(Layer(128,Activation=Activation.Relu,Weight_param='he'))
     model.add(Layer(10,Activation=Activation.softmax))
-    model.compile(Loss_function=Loss.categorical_cross_entropy,optimizer=None,learning_rate=0.01)
-    model.train(x_train,y_train,epochs=200,batch_size=1000,verbose=True)
+    model.compile(Loss_function=Loss.categorical_cross_entropy,optimizer=None,learning_rate=0.1)
+    model.train(x_train,y_train,epochs=10,batch_size=512,verbose=True,validation=0.3)
     pred = model.predict(x_test)
 
     pred = np.argmax(pred,axis=1)
@@ -139,6 +161,15 @@ if __name__ == '__main__':
 
     print(pred)
     print(y_test)
+
+
+
+    print('======not matched==============')
+    np.set_printoptions(threshold=np.nan)
+
+    print(pred[pred != y_test])
+    print(y_test[pred != y_test])
+
 
     precision, recall, fscore, support = precision_recall_fscore_support(y_test.tolist(),pred.tolist())
 
