@@ -26,6 +26,12 @@ class ActivationFunction:
 
         return ret_x
 
+    @staticmethod
+    def maxout(x):
+        pass
+
+
+
 class Derivative_ActivationFunction:
     @staticmethod
     def d_sigmoid(x,*args,**kwargs):

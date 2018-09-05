@@ -6,12 +6,15 @@ from keras.datasets import mnist
 from Utils import Utils
 from keras.utils import to_categorical
 from sklearn.metrics import *
+from Optimaziers import *
+
 import time
 
 class ANN:
     def __init__(self):
         np.random.seed(int(time.time()))
         self.Layers = list()
+
     def add(self,L:Layer):
         if not isinstance(L,Layer):
             raise TypeError
@@ -30,11 +33,13 @@ class ANN:
 
         self.Layers.append(L)
 
-    def compile(self,Loss_function,optimizer,learning_rate = 0.01): #
+    def compile(self,Loss_function,optimizer='default',learning_rate = 0.01,lr_decay=1): #
         self.lr = learning_rate
         self.Loss_function = Loss_function[0]
         self.dLoss_function = Loss_function[1]
-        self.optimizer = optimizer
+        self.lr_decay = lr_decay
+        self.optimizer = Optimizers(optimizer.lower());
+
 
     def predict(self,input_data):
         for i in self.Layers:
@@ -95,6 +100,8 @@ class ANN:
 
             print("validation acc: {}".format(np.sum(acc)/acc.shape[0] *100))
 
+            #learning rate decay
+            self.lr = self.lr * self.lr_decay
 
 
     def backprop(self,train_y,predicted_y):
@@ -131,8 +138,7 @@ class ANN:
                 else:
                     dLayers[layer_num] += dlayer
 
-        for dlayer,cur_layer in zip(dLayers,reversed(self.Layers)):
-            cur_layer.W = cur_layer.W - (self.lr * dlayer)
+        self.optimizer.optimizer(self.lr,self.Layers,dLayers)
 
 
 if __name__ == '__main__':
@@ -143,8 +149,6 @@ if __name__ == '__main__':
     y_test = to_categorical(y_test)
     print(y_train.shape)
     print(x_train.shape)
-    #print(x_train[0])
-    #print(y_train[0])
 
     model = ANN()
     model.add(Layer(64,Input_shape=28*28,Activation=Activation.tanh,Weight_param='xavier'))
@@ -152,7 +156,7 @@ if __name__ == '__main__':
     model.add(Layer(128,Activation=Activation.tanh,Weight_param='xavier'))
     model.add(Layer(128,Activation=Activation.Relu,Weight_param='he'))
     model.add(Layer(10,Activation=Activation.softmax))
-    model.compile(Loss_function=Loss.categorical_cross_entropy,optimizer=None,learning_rate=0.1)
+    model.compile(Loss_function=Loss.categorical_cross_entropy,learning_rate=0.001,lr_decay=0.95,optimizer='adam')
     model.train(x_train,y_train,epochs=10,batch_size=512,verbose=True,validation=0.3)
     pred = model.predict(x_test)
 
@@ -167,8 +171,8 @@ if __name__ == '__main__':
     print('======not matched==============')
     np.set_printoptions(threshold=np.nan)
 
-    print(pred[pred != y_test])
-    print(y_test[pred != y_test])
+    for i,j in zip(pred[pred != y_test],y_test[pred != y_test]):
+        print("predicted : {} , actual {}".format(i,j))
 
 
     precision, recall, fscore, support = precision_recall_fscore_support(y_test.tolist(),pred.tolist())

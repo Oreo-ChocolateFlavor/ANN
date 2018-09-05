@@ -14,7 +14,6 @@ class LossFunction:
         if(real_output.shape[1] !=  predicted_output.shape[1]):
             raise Exception("real & predicted dimension is not equal. use OHR")
         return -np.sum(real_output*np.log(predicted_output))
-        #return np.sum(-real_output.dot(np.log(predicted_output.T)))
 
 class Derivative_LossFuntion:
     @staticmethod
